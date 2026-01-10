@@ -1,20 +1,13 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 import javax.swing.JFrame;
+import java.awt.*;
 
-public class MyAnim extends JFrame {
-    public MyAnim() {
-        super("Animation-floating letters");
-    }
-
+public class MyAnim {
     public static void main(String[] args) {
-        JFrame frame = new MyAnim();
+        JFrame frame = new JFrame("Animation - Floating Letters");
+        PolygonCanvas canvas = new PolygonCanvas();
         frame.setSize(500, 500);
-        frame.setDefaultCloseOperation(3);
-        frame.add(new PolygonCanvas());
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(canvas);
         frame.setVisible(true);
     }
 }
