@@ -92,8 +92,8 @@ class PolygonCanvas extends JPanel implements ActionListener {
 
     private void drawLetter(Graphics2D g2d, Polygon p, double x, double y, double scale, double angle, Color c) {
         AffineTransform old = g2d.getTransform();
-        g2d.translate(x, y);
-        g2d.scale(scale, scale);
+        g2d.translate(x,y);
+        g2d.scale(scale,scale);
         g2d.rotate(angle, 15.0, 25.0);
         g2d.setColor(c);
         g2d.fillPolygon(p);
@@ -145,7 +145,7 @@ class PolygonCanvas extends JPanel implements ActionListener {
             this.m_color_number = this.rand.nextInt(this.colors.length);
             this.tick_counter = 0;
         }
-
+//ציור מחדש
         this.repaint();
     }
 }
