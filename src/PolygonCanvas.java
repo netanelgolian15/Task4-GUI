@@ -1,4 +1,9 @@
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
@@ -6,17 +11,29 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Random;
 import java.util.Scanner;
+import javax.swing.JPanel;
 import javax.swing.Timer;
 
-class PolygonCanvas extends Canvas implements ActionListener {
+class PolygonCanvas extends JPanel implements ActionListener {
     Timer timer = new Timer(30, this);
     Random rand = new Random();
+
+    // משתני גודל
     double nScale = 2.0;
     double mScale = 1.5;
-    double nX = 50.0, nY = 50.0;
-    double nVelX = 3.0, nVelY = 3.0;
-    double mX = 200.0, mY = 200.0;
-    double mVelX = -3.0, mVelY = -3.0;
+
+    // משתני שינוי גודל (מהירות הגדילה/הקטנה)
+    double nScaleDelta = 0.02;
+    double mScaleDelta = 0.015;
+
+    double nX = 50.0;
+    double nY = 50.0;
+    double nVelX = 3.0;
+    double nVelY = 3.0;
+    double mX = 200.0;
+    double mY = 200.0;
+    double mVelX = -3.0;
+    double mVelY = -3.0;
     double mAngle = 0.0;
     int tick_counter = 0;
     int n_color_number = 0;
@@ -28,30 +45,6 @@ class PolygonCanvas extends Canvas implements ActionListener {
         this.timer.start();
     }
 
-    // שים לב לשינויים בתוך מתודת ה-paint
-    @Override
-    public void paint(Graphics g) {
-        // 1. הסרנו את super.paint(g) כדי למנוע StackOverflow
-
-        // 2. ניקוי ידני של המסך כדי למנוע את המריחות שראינו בסרטון
-        g.setColor(getBackground());
-        g.fillRect(0, 0, getWidth(), getHeight());
-
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // טעינת וציור האותיות
-        Polygon n = this.createPolygon("polygon coordinates.txt", 0);
-        this.drawLetter(g2d, n, this.nX, this.nY, this.nScale, 0.0, this.colors[this.n_color_number]);
-
-        Polygon m = this.createPolygon("polygon coordinates.txt", 1);
-        this.drawLetter(g2d, m, this.mX, this.mY, this.mScale, this.mAngle, this.colors[this.m_color_number]);
-
-        // מבטיח סנכרון חלק של הגרפיקה
-        Toolkit.getDefaultToolkit().sync();
-    }
-
-    // המתודות createPolygon ו-drawLetter נשארות כפי שהיו
     private Polygon createPolygon(String fileName, int targetIndex) {
         Polygon polygon = new Polygon();
         try {
@@ -61,20 +54,40 @@ class PolygonCanvas extends Canvas implements ActionListener {
             while(scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
                 if (line.equalsIgnoreCase("END")) {
-                    currentIndex++;
-                } else if (currentIndex == targetIndex && !line.isEmpty()) {
-                    String[] coordinates = line.split(",");
-                    if (coordinates.length == 2) {
-                        polygon.addPoint(Integer.parseInt(coordinates[0].trim()), Integer.parseInt(coordinates[1].trim()));
+                    ++currentIndex;
+                } else {
+                    if (currentIndex == targetIndex && !line.isEmpty()) {
+                        String[] coordinates = line.split(",");
+                        if (coordinates.length == 2) {
+                            int x = Integer.parseInt(coordinates[0].trim());
+                            int y = Integer.parseInt(coordinates[1].trim());
+                            polygon.addPoint(x, y);
+                        }
+                    }
+                    if (currentIndex > targetIndex) {
+                        break;
                     }
                 }
-                if (currentIndex > targetIndex) break;
             }
             scanner.close();
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException var11) {
             System.out.println("קובץ לא נמצא!");
         }
         return polygon;
+    }
+
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D)g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        Polygon n = this.createPolygon("polygon coordinates.txt", 0);
+        this.drawLetter(g2d, n, this.nX, this.nY, this.nScale, 0.0, this.colors[this.n_color_number]);
+
+        Polygon m = this.createPolygon("polygon coordinates.txt", 1);
+        this.drawLetter(g2d, m, this.mX, this.mY, this.mScale, this.mAngle, this.colors[this.m_color_number]);
+
+        Toolkit.getDefaultToolkit().sync();
     }
 
     private void drawLetter(Graphics2D g2d, Polygon p, double x, double y, double scale, double angle, Color c) {
@@ -90,24 +103,49 @@ class PolygonCanvas extends Canvas implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        // לוגיקת התנועה שלך נשארת זהה
-        int width = getWidth();
-        int height = getHeight();
-        mAngle += 0.05;
+        int width = this.getWidth();
+        int height = this.getHeight();
 
-        if (nX < 0 || nX + 50 * nScale > width) nVelX = -nVelX;
-        if (nY < 0 || nY + 50 * nScale > height) nVelY = -nVelY;
-        nX += nVelX; nY += nVelY;
+        this.mAngle += 0.05;
 
-        if (mX < 0 || mX + 30 * mScale > width) mVelX = -mVelX;
-        if (mY < 0 || mY + 50 * mScale > height) mVelY = -mVelY;
-        mX += mVelX; mY += mVelY;
-
-        if (++tick_counter >= 30) {
-            n_color_number = rand.nextInt(colors.length);
-            m_color_number = rand.nextInt(colors.length);
-            tick_counter = 0;
+        // --- לוגיקת שינוי גודל (Scaling) ---
+        this.nScale += this.nScaleDelta;
+        if (this.nScale > 3.0 || this.nScale < 0.5) {
+            this.nScaleDelta = -this.nScaleDelta;
         }
-        repaint();
+
+        this.mScale += this.mScaleDelta;
+        if (this.mScale > 2.5 || this.mScale < 0.7) {
+            this.mScaleDelta = -this.mScaleDelta;
+        }
+        // ----------------------------------
+
+        // עדכון תנועה וזיהוי התנגשות
+        if (this.nX < 0.0 || this.nX + 50.0 * this.nScale > (double)width) {
+            this.nVelX = -this.nVelX;
+        }
+        if (this.nY < 0.0 || this.nY + 50.0 * this.nScale > (double)height) {
+            this.nVelY = -this.nVelY;
+        }
+        this.nX += this.nVelX;
+        this.nY += this.nVelY;
+
+        if (this.mX < 0.0 || this.mX + 30.0 * this.mScale > (double)width) {
+            this.mVelX = -this.mVelX;
+        }
+        if (this.mY < 0.0 || this.mY + 50.0 * this.mScale > (double)height) {
+            this.mVelY = -this.mVelY;
+        }
+        this.mX += this.mVelX;
+        this.mY += this.mVelY;
+
+        ++this.tick_counter;
+        if (this.tick_counter >= 30) {
+            this.n_color_number = this.rand.nextInt(this.colors.length);
+            this.m_color_number = this.rand.nextInt(this.colors.length);
+            this.tick_counter = 0;
+        }
+
+        this.repaint();
     }
 }
